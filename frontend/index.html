@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <title>Potato Leaf Disease Detection</title>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', sans-serif;
+      background: linear-gradient(120deg, #dbeafe, #f0fdf4);
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .card {
+      background: rgba(255, 255, 255, 0.7);
+      backdrop-filter: blur(12px);
+      padding: 40px;
+      border-radius: 20px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+      text-align: center;
+      width: 400px;
+    }
+
+    .card h2 {
+      margin-bottom: 20px;
+      font-size: 24px;
+      color: #1e3a8a;
+    }
+
+    .upload-area {
+      border: 2px dashed #3b82f6;
+      padding: 30px 20px;
+      border-radius: 12px;
+      margin-bottom: 20px;
+      color: #1e40af;
+      cursor: pointer;
+      transition: 0.3s ease;
+    }
+
+    .upload-area:hover {
+      background: #e0f2fe;
+    }
+
+    input[type="file"] {
+      display: none;
+    }
+
+    #preview {
+      width: 100%;
+      max-height: 250px;
+      border-radius: 12px;
+      margin: 20px 0;
+      object-fit: contain;
+      display: none;
+      border: 2px solid #cbd5e1;
+    }
+
+    button {
+      background-color: #3b82f6;
+      border: none;
+      padding: 12px 25px;
+      border-radius: 10px;
+      color: white;
+      font-size: 16px;
+      cursor: pointer;
+      transition: 0.3s ease;
+    }
+
+    button:hover {
+      background-color: #2563eb;
+    }
+
+    #result {
+      margin-top: 20px;
+      font-size: 16px;
+      background-color: #f0f9ff;
+      color: #0f172a;
+      padding: 15px;
+      border-radius: 12px;
+      box-shadow: 0 0 8px rgba(0, 0, 0, 0.05);
+    }
+
+    #loader {
+      margin-top: 15px;
+      font-size: 14px;
+      color: #0ea5e9;
+      display: none;
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="card">
+    <h2>🍃 Potato Leaf Disease Detection</h2>
+
+    <label class="upload-area" for="fileInput">📂 Click or Drag an Image</label>
+    <input type="file" id="fileInput" accept="image/*" onchange="previewImage(event)" />
+
+    <img id="preview" />
+
+    <div id="loader">⏳ Analyzing image...</div>
+
+    <button onclick="predict()">🔍 Predict</button>
+
+    <div id="result"></div>
+  </div>
+
+  <script>
+    function previewImage(event) {
+      const preview = document.getElementById("preview");
+      const file = event.target.files[0];
+      if (!file) return;
+      preview.src = URL.createObjectURL(file);
+      preview.style.display = "block";
+      document.getElementById("result").innerText = "";
+    }
+
+    async function predict() {
+      const fileInput = document.getElementById("fileInput");
+      const file = fileInput.files[0];
+      const resultEl = document.getElementById("result");
+      const loader = document.getElementById("loader");
+
+      if (!file) {
+        resultEl.innerText = "⚠️ Please select a file first.";
+        return;
+      }
+
+      const formData = new FormData();
+      formData.append("file", file);
+
+      loader.style.display = "block";
+      resultEl.innerText = "";
+
+      try {
+        const response = await fetch("http://localhost:8001/predict", {
+          method: "POST",
+          body: formData
+        });
+
+        const data = await response.json();
+        loader.style.display = "none";
+
+        if (data.error) {
+          resultEl.innerText = `❌ Server Error: ${data.error}`;
+        } else {
+          resultEl.innerText = `✅ Prediction: ${data.class}\n📊 Confidence: ${(data.confidence * 100).toFixed(2)}%`;
+        }
+      } catch (error) {
+        loader.style.display = "none";
+        console.error("Error:", error);
+        resultEl.innerText = "❌ Something went wrong during prediction.";
+      }
+    }
+
+    // Drag-and-drop support
+    const uploadArea = document.querySelector(".upload-area");
+
+    uploadArea.addEventListener("dragover", (e) => {
+      e.preventDefault();
+      uploadArea.style.background = "#f0f9ff";
+    });
+
+    uploadArea.addEventListener("dragleave", () => {
+      uploadArea.style.background = "transparent";
+    });
+
+    uploadArea.addEventListener("drop", (e) => {
+      e.preventDefault();
+      const files = e.dataTransfer.files;
+      document.getElementById("fileInput").files = files;
+      previewImage({ target: { files } });
+    });
+  </script>
+
+</body>
+</html>

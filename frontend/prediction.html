@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Diagnose Plant – PedHealth.com</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body class="bg-white text-gray-800 font-sans">
+
+    <!-- Navbar -->
+    <nav class="flex items-center justify-between px-10 py-4 shadow-sm border-b">
+        <div class="text-2xl font-bold text-green-700">🌿 PedHealth.com</div>
+        <div class="flex items-center space-x-6">
+            <button class="text-sm font-medium text-gray-700 hover:text-green-700">Plant Diseases</button>
+            <button class="text-sm font-medium text-gray-700 hover:text-green-700">Blog</button>
+            <button class="text-sm font-medium text-gray-700 hover:text-green-700">About</button>
+        </div>
+        <div class="flex items-center space-x-4">
+            <span class="text-sm font-medium">ENGLISH</span>
+            <img src="assets/icons8-customer-48.png" alt="Profile" class="w-8 h-8 rounded-full border border-green-700">
+        </div>
+    </nav>
+
+    <!-- Diagnosis Section -->
+    <section class="px-10 py-16 bg-gray-50">
+        <div class="max-w-4xl mx-auto bg-white p-8 rounded-lg shadow-lg relative">
+
+            <!-- Top Buttons: Back (left) & Reload (right) -->
+            <div class="flex justify-between mb-4">
+                <button onclick="window.location.href='login.html';"
+                    class="bg-gray-200 hover:bg-gray-300 text-gray-700 text-sm px-4 py-1 rounded">
+                    🔙 Back
+                </button>
+                <button onclick="window.location.reload();"
+                    class="bg-gray-200 hover:bg-gray-300 text-gray-700 text-sm px-4 py-1 rounded">
+                    🔁 Reload
+                </button>
+            </div>
+
+            <h2 class="text-3xl font-bold text-center text-green-700 mb-6">
+                🍃 Potato Leaf Disease Detection
+            </h2>
+
+            <!-- Upload + Preview -->
+            <div class="flex flex-col md:flex-row items-center justify-center gap-8 mb-6">
+                <!-- Upload Button -->
+                <div class="flex flex-col items-center">
+                    <input type="file" id="fileInput" accept="image/*" onchange="previewImage(event)" class="mb-4" />
+                    <span class="text-gray-600 text-sm">Choose an image of a potato leaf</span>
+                </div>
+
+                <!-- Image Preview -->
+                <div class="w-64 h-64 border-2 border-green-200 rounded-lg flex items-center justify-center">
+                    <img id="preview" src="assets\free-no-image-icon-14596-thumb.png" alt="Image Preview" class="max-w-full max-h-full" />
+                </div>
+            </div>
+
+            <!-- Loader -->
+            <div id="loader" class="text-center text-gray-500 hidden mb-4">⏳ Analyzing image...</div>
+
+            <!-- Predict Button -->
+            <div class="text-center">
+                <button onclick="predict()"
+                    class="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-full text-lg transition">
+                    🔍 Predict
+                </button>
+            </div>
+
+            <!-- Result -->
+            <div id="result" class="mt-6 text-center text-lg font-medium text-gray-800"></div>
+        </div>
+    </section>
+
+
+
+    <!-- Script -->
+    <script>
+        function previewImage(event) {
+            const preview = document.getElementById("preview");
+            const file = event.target.files[0];
+            if (!file) return;
+            preview.src = URL.createObjectURL(file);
+            preview.style.display = "block";
+            document.getElementById("result").innerText = "";
+        }
+
+        async function predict() {
+            const fileInput = document.getElementById("fileInput");
+            const file = fileInput.files[0];
+            const resultEl = document.getElementById("result");
+            const loader = document.getElementById("loader");
+
+            if (!file) {
+                resultEl.innerText = "⚠️ Please select a file first.";
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append("file", file);
+
+            loader.classList.remove("hidden");
+            resultEl.innerText = "";
+
+            try {
+                const response = await fetch("http://localhost:8001/predict", {
+                    method: "POST",
+                    body: formData
+                });
+
+                const data = await response.json();
+                loader.classList.add("hidden");
+
+                if (data.error) {
+                    resultEl.innerText = `❌ Server Error: ${data.error}`;
+                } else {
+                    resultEl.innerText = `✅ Prediction: ${data.class}\n📊 Confidence: ${(data.confidence * 100).toFixed(2)}%`;
+                }
+            } catch (error) {
+                loader.classList.add("hidden");
+                console.error("Error:", error);
+                resultEl.innerText = "❌ Something went wrong during prediction.";
+            }
+        }
+    </script>
+
+</body>
+
+</html>

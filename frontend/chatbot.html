@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Potato Leaf Disease Detection + FAQ Chatbot</title>
+    <style>
+      body {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        background: linear-gradient(to right, #e0f7fa, #f9f9f9);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 40px 20px;
+        color: #333;
+        min-height: 100vh;
+      }
+
+      h2,
+      h3 {
+        color: #1e3a8a;
+        margin-bottom: 10px;
+      }
+
+      input[type="file"] {
+        margin: 12px 0;
+        padding: 8px;
+        background-color: #fff;
+        border: 2px dashed #94a3b8;
+        border-radius: 6px;
+        width: 100%;
+        max-width: 300px;
+        cursor: pointer;
+      }
+
+      button {
+        background: #2563eb;
+        color: #fff;
+        padding: 10px 18px;
+        margin: 6px 4px;
+        border: none;
+        border-radius: 6px;
+        font-size: 16px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      }
+
+      button:hover {
+        background: #1e40af;
+        transform: scale(1.03);
+      }
+
+      #preview {
+        margin: 16px 0;
+        max-width: 300px;
+        max-height: 300px;
+        border: 3px solid #cbd5e1;
+        border-radius: 10px;
+        display: none;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      }
+
+      #result {
+        font-size: 18px;
+        margin-top: 15px;
+        color: #1f2937;
+        white-space: pre-line;
+        background: #dbeafe;
+        padding: 12px 18px;
+        border-radius: 10px;
+        border-left: 5px solid #2563eb;
+        max-width: 600px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.07);
+      }
+
+      /* Chatbot styles */
+      #chat-container {
+        width: 100%;
+        max-width: 680px;
+        margin-top: 60px;
+        background: #ffffff;
+        padding: 25px;
+        border-radius: 12px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+      }
+
+      #chatbox {
+        height: 300px;
+        overflow-y: auto;
+        border: 2px solid #cbd5e1;
+        padding: 12px;
+        background: #f1f5f9;
+        border-radius: 10px;
+        margin-bottom: 12px;
+        font-size: 15px;
+      }
+
+      .user {
+        font-weight: bold;
+        color: #1e293b;
+      }
+
+      .bot {
+        color: #2563eb;
+        margin-left: 10px;
+      }
+
+      #controls {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        align-items: center;
+        margin-bottom: 10px;
+      }
+
+      #userInput,
+      #langSelect {
+        padding: 10px;
+        border-radius: 6px;
+        border: 1px solid #ccc;
+        flex: 1;
+        font-size: 15px;
+      }
+
+      #faq-buttons {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        justify-content: center;
+        margin-top: 12px;
+      }
+
+      #faq-buttons button {
+        background-color: #f3f4f6;
+        color: #111827;
+        padding: 8px 12px;
+        font-size: 14px;
+        border: 1px solid #d1d5db;
+        border-radius: 6px;
+        transition: background 0.3s ease;
+      }
+
+      #faq-buttons button:hover {
+        background-color: #e0e7ff;
+        color: #1d4ed8;
+        font-weight: bold;
+      }
+    </style>
+  </head>
+  <body>
+    <h2>🧪 Potato Leaf Disease Detection</h2>
+    <input
+      type="file"
+      id="fileInput"
+      accept="image/*"
+      onchange="previewImage(event)"
+    />
+    <img id="preview" />
+    <button onclick="predict()">🔍 Predict</button>
+    <p id="result"></p>
+
+    <div id="chat-container">
+      <h3>🌾 Kisan Chatbot</h3>
+      <select id="langSelect">
+        <option value="en">English</option>
+        <option value="hi">हिन्दी</option>
+        <option value="kn">ಕನ್ನಡ</option>
+        <option value="bn">বাংলা</option>
+      </select>
+
+      <div id="chatbox"></div>
+
+      <div id="controls">
+        <input id="userInput" placeholder="Type your question here..." />
+        <button id="sendBtn" onclick="sendMessage()">Send</button>
+        <button id="voiceBtn" onclick="startListening()">🎤 Speak</button>
+      </div>
+
+      <div id="faq-buttons">
+        <p><strong>Quick FAQs:</strong></p>
+        <button onclick="askFAQ('early_blight')">Early Blight</button>
+        <button onclick="askFAQ('late_blight')">Late Blight</button>
+        <button onclick="askFAQ('bacterial_wilt')">Bacterial Wilt</button>
+        <button onclick="askFAQ('potato_scab')">Potato Scab</button>
+        <button onclick="askFAQ('blackleg')">Blackleg</button>
+        <button onclick="askFAQ('fusarium_wilt')">Fusarium Wilt</button>
+        <button onclick="askFAQ('powdery_mildew')">Powdery Mildew</button>
+        <button onclick="askFAQ('downy_mildew')">Downy Mildew</button>
+        <button onclick="askFAQ('aphid_infestation')">Aphid Infestation</button>
+        <button onclick="askFAQ('nematode_damage')">Nematode Damage</button>
+        <br />
+        <button onclick="askFAQ('pm_kisan')">PM‑KISAN</button>
+        <button onclick="askFAQ('kcc')">KCC Loan</button>
+        <button onclick="askFAQ('crop_insurance')">Crop Insurance</button>
+        <button onclick="askFAQ('agri_loan')">Agri Loan</button>
+        <button onclick="askFAQ('microfinance')">Microfinance</button>
+        <button onclick="askFAQ('subsidy')">Subsidies</button>
+        <button onclick="askFAQ('soil_health_card')">Soil Health Card</button>
+        <button onclick="askFAQ('drip_irrigation')">Drip Subsidy</button>
+        <button onclick="askFAQ('cold_storage')">Cold Storage</button>
+        <button onclick="askFAQ('warehouse_receipts')">
+          Warehouse Financing
+        </button>
+      </div>
+    </div>
+
+    <script>
+      // Image Preview & Prediction
+      function previewImage(e) {
+        const p = document.getElementById("preview");
+        p.src = URL.createObjectURL(e.target.files[0]);
+        p.style.display = "block";
+      }
+      async function predict() {
+        const file = document.getElementById("fileInput").files[0];
+        if (!file) {
+          return (document.getElementById("result").innerText =
+            "Please select a file.");
+        }
+        document.getElementById("result").innerText = "Processing...";
+        const fd = new FormData();
+        fd.append("file", file);
+        try {
+          const res = await fetch("http://localhost:8001/predict", {
+            method: "POST",
+            body: fd,
+          });
+          const data = await res.json();
+          if (data.error) {
+            document.getElementById(
+              "result"
+            ).innerText = `Error: ${data.error}`;
+          } else {
+            document.getElementById("result").innerText = `Prediction: ${
+              data.class
+            }\nConfidence: ${(data.confidence * 100).toFixed(2)}%`;
+            showDiseaseAdvice(data.class);
+          }
+        } catch (err) {
+          console.error(err);
+          document.getElementById("result").innerText = "Prediction failed.";
+        }
+      }
+
+      // FAQ Data
+      const faq = {
+        en: {
+          default: "Sorry, I didn't understand. Ask about diseases or finance.",
+          early_blight:
+            "Early Blight: Caused by Alternaria solani. Treat with Mancozeb. Loss: Up to 30%.",
+          late_blight:
+            "Late Blight: Phytophthora infestans. Use Metalaxyl; remove leaves. Loss: total crop in weeks.",
+          bacterial_wilt:
+            "Bacterial Wilt: Ralstonia solanacearum. Avoid waterlogging; remove plants. Loss: 20–25%.",
+          potato_scab:
+            "Potato Scab: Streptomyces scabies. Use certified seed; pH 5.2–5.5. Loss: 10–15%.",
+          blackleg:
+            "Blackleg: Pectobacterium atrosepticum. Seed treatment. Loss: 15–20%.",
+          fusarium_wilt:
+            "Fusarium Wilt: Fusarium spp. Rotate crops; resistant varieties. Loss: ~25%.",
+          powdery_mildew:
+            "Powdery Mildew: Erysiphe spp. Sulfur spray. Loss: 10–20%.",
+          downy_mildew:
+            "Downy Mildew: Phytophthora infestans. Copper spray. Loss: 20–30%.",
+          aphid_infestation:
+            "Aphid Infestation: Various aphids. Neem oil/insecticide. Loss: up to 15%.",
+          nematode_damage:
+            "Nematode Damage: Root‑knot. Soil fumigation; resistant varieties. Loss: ~20%.",
+          pm_kisan: "PM‑KISAN: ₹6,000/year. Apply at pmkisan.gov.in.",
+          kcc: "KCC Loan: Low‑interest agri credit card. Bank apply.",
+          crop_insurance: "PMFBY: Premium subsidy. Enroll at Bima Kendra.",
+          agri_loan:
+            "Agri Loan: Short‑term NABARD/co‑op at concessional rates.",
+          microfinance: "Microfinance: SHG/MFI small loans. Contact MFI.",
+          subsidy:
+            "Subsidies: Seeds/fertilizers/equipment via state agri dept.",
+          soil_health_card:
+            "Soil Health Card: Free soil test & advice. Register online.",
+          drip_irrigation: "Drip Subsidy: 70% under MGNREGA. Register online.",
+          cold_storage: "Cold Storage Subsidy: 35%. Apply via FCI/state govt.",
+          warehouse_receipts:
+            "Warehouse Financing: Loans against stored produce.",
+        },
+        hi: {
+          default: "माफ करें, समझ नहीं पाया। रोग या वित्त के बारे में पूछें।",
+          early_blight:
+            "अर्ली ब्लाइट: Alternaria solani। Mancozeb छिड़कें। नुकसान: 30% तक।",
+          late_blight:
+            "लेट ब्लाइट: Phytophthora infestans। Metalaxyl लगाएं; पत्ते हटाएं।",
+          bacterial_wilt:
+            "बैक्टीरियल विल्ट: Ralstonia। जलजमाव से बचें; पौधे हटाएं।",
+          potato_scab:
+            "पोटैटो स्कैब: Streptomyces scabies। प्रमाणित बियाज; pH 5.2–5.5।",
+          blackleg: "ब्लैकलेग: Pectobacterium। बीज उपचार।",
+          fusarium_wilt: "फ्यूज़ेरियम विल्म्: Fusarium spp. फसल चक्रीकरण।",
+          powdery_mildew: "पाउडरी मिल्ड्यू: Erysiphe spp. सल्फर छिड़काव।",
+          downy_mildew: "डाउनमी मिल्ड्यू: Phytophthora। कॉपर स्प्रे।",
+          aphid_infestation: "एफिड: नीम तेल/कीटनाशक।",
+          nematode_damage: "नैमेटोड: मृदा नसबंदी; प्रतिरोधी।",
+          pm_kisan: "पीएम-किसान: ₹6,000/वर्ष। pmkisan.gov.in पर।",
+          kcc: "किसान क्रेडिट कार्ड: बैंक में आवेदन।",
+          crop_insurance: "फसल बीमा (PMFBY): प्रीमियम सब्सिडी।",
+          agri_loan: "कृषि ऋण: NABARD/सहकारी।",
+          microfinance: "माइक्रोफायनेंस: SHG/MFI।",
+          subsidy: "सब्सिडी: बीज/उर्वरक पर।",
+          soil_health_card: "मृदा स्वास्थ्य कार्ड: नि:शुल्क।",
+          drip_irrigation: "ड्रिप सब्सिडी: 70% MGNREGA।",
+          cold_storage: "कोल्ड स्टोरेज: 35%।",
+          warehouse_receipts: "गोदाम वित्त पोषण: भंडार ऋण।",
+        },
+        kn: {
+          default: "ಕ್ಷಮಿಸಿ, ಅರ್ಥವಾಗಲಿಲ್ಲ. ರೋಗ ಅಥವಾ ಆರ್ಥಿಕ ವಿಚಾರ ಕೇಳಿ.",
+          early_blight:
+            "ಅಕಾಲಿಕ ಬ್ಲೈಟ್: Alternaria solani. ಮ್ಯಾಂಕೋಜೆಬ್ ಹಚ್ಚಿ. ನಷ್ಟ: 30%.",
+          late_blight:
+            "ವಿಲಂಬಿತ ಬ್ಲೈಟ್: Phytophthora infestans. ಮೆಟಾಲಾಕ್ಸಿಲ್, ಎಲೆ ತೆಗೆಯಿರಿ.",
+          bacterial_wilt:
+            "ಬ್ಯಾಕ್ಟೀರಿಯಲ್ ವಿಲ್ಟ್: Ralstonia. ನೀರು ತಪ್ಪಿಸಿ; ಸಸ್ಯ ತೆಗೆಯಿರಿ.",
+          potato_scab:
+            "ಪೊಟೇಟೊ ಸ್ಕ್ಯಾಬ್: Streptomyces scabies. ಪ್ರಮಾಣಿತ ಬೀಜ; pH 5.2–5.5.",
+          blackleg: "ಬ್ಲ್ಯಾಕ್‌ಲೆಗ್: Pectobacterium. ಬೀಜ ಚಿಕಿತ್ಸೆ.",
+          fusarium_wilt: "ಫ್ಯೂಜೇರಿಯಂ ವಿಲ್ಟ್: Fusarium spp. ಬೆಳೆ ಚಕ್ರ.",
+          powdery_mildew: "ಪೌಡರಿ ಮಿಲ್ಡ್ಯೂ: Erysiphe spp. ಗಂಧಕ.",
+          downy_mildew: "ಡೌನಿ ಮಿಲ್ಡ್ಯೂ: Phytophthora. ಕಾಪರ್ ಸಿಂಪಡಿಸಿ.",
+          aphid_infestation: "ಎಫಿಡ್: ನೀಂ ಎಣ್ಣೆ/ಕೀಟನಾಶಕ.",
+          nematode_damage: "ನಮೊಟೋಡ್: ಮಣ್ಣು ಫ್ಯೂಮಿಗೇಶನ್.",
+          pm_kisan: "PM‑KISAN: ₹6,000/ವರ್ಷ. pmkisan.gov.in.",
+          kcc: "KCC ಸಾಲ: ಬ್ಯಾಂಕ್ ಅರ್ಜಿ.",
+          crop_insurance: "PMFBY ವಿಮೆ: ಪ್ರೀಮಿಯಂ ಸಬ್ಸಿಡಿ.",
+          agri_loan: "ಕೃಷಿ ಸಾಲ: NABARD/ಸಹಕಾರಿ.",
+          microfinance: "ಮೈಕ್ರೊಫೈನಾನ್ಸ್: SHG/MFI.",
+          subsidy: "ಸಬ್ಸಿಡಿ: ಬೀಜ/ಊರ್ವರಕ.",
+          soil_health_card: "Soil Health Card: ಉಚಿತ.",
+          drip_irrigation: "ಡ್ರಿಪ್: 70% MGNREGA.",
+          cold_storage: "ಕೋಲ್ಡ್ ಸ್ಟೋರೇಜ್: 35%.",
+          warehouse_receipts: "ಕೋದಾಮು ಧನಕೋಶ.",
+        },
+        bn: {
+          default: "দুঃখিত, বুঝতে পারিনি। রোগ বা আর্থিক প্রশ্ন জিজ্ঞাসা করুন।",
+          early_blight:
+            "আর্লি ব্লাইট: Alternaria solani। Mancozeb ব্যবহার করুন। ৩০% ক্ষতি।",
+          late_blight:
+            "লেট ব্লাইট: Phytophthora infestans। Metalaxyl, পাতা সরান।",
+          bacterial_wilt: "ব্যাকটেরিয়াল উইল্ট: Ralstonia। জলাবদ্ধতা এড়ান।",
+          potato_scab:
+            "পটেটো স্ক্যাব: Streptomyces scabies। সার্টিফাইড বীজ; pH 5.2–5.5।",
+          blackleg: "ব্ল্যাকলেগ: Pectobacterium। বীজ চিকিৎসা।",
+          fusarium_wilt: "ফিউজেরিয়াম উইল্ট: Fusarium spp. ফসল ঘোরান।",
+          powdery_mildew: "পাউডারি মিলডিউ: Erysiphe spp. সালফার স্প্রে।",
+          downy_mildew: "ডাউনি মিলডিউ: Phytophthora। তামার স্প্রে।",
+          aphid_infestation: "এফিড: নিম তেল।",
+          nematode_damage: "নেমাটোড: মাটি ফিউমিগেশন।",
+          pm_kisan: "PM‑KISAN: ₹6,000/বছর। pmkisan.gov.in।",
+          kcc: "KCC ঋণ: ব্যাংকে আবেদন।",
+          crop_insurance: "PMFBY: প্রিমিয়াম ভর্তুকি।",
+          agri_loan: "কৃষি ঋণ: NABARD/সহকারী।",
+          microfinance: "মাইক্রোফাইন্যান্স: SHG/MFI।",
+          subsidy: "ভর্তুকি: বীজ/সার।",
+          soil_health_card: "মাটি স্বাস্থ্য কার্ড: বিনামূল্য পরাীক্ষা।",
+          drip_irrigation: "ড্রিপ: ৭০% MGNREGA।",
+          cold_storage: "কোল্ড স্টোরেজ: ৩৫%।",
+          warehouse_receipts: "গুদাম ফাইন্যান্স।",
+        },
+      };
+
+      // Chat Helpers
+      function appendMessage(who, text) {
+        const box = document.getElementById("chatbox");
+        const cls = who === "user" ? "user" : "bot";
+        box.innerHTML += `<div><span class="${cls}">${
+          who === "user" ? "You" : "Bot"
+        }:</span> ${text}</div>`;
+        box.scrollTop = box.scrollHeight;
+        if (who === "bot") speakText(text);
+      }
+
+      function sendMessage() {
+        const txtEl = document.getElementById("userInput");
+        const txt = txtEl.value.trim();
+        if (!txt) return;
+        const lang = document.getElementById("langSelect").value;
+        appendMessage("user", txt);
+        let key = "default",
+          low = txt.toLowerCase();
+        for (const k in faq[lang]) {
+          if (k !== "default" && low.includes(k.replace(/_/g, " "))) {
+            key = k;
+            break;
+          }
+        }
+        appendMessage("bot", faq[lang][key]);
+        txtEl.value = "";
+      }
+
+      function askFAQ(key) {
+        const lang = document.getElementById("langSelect").value;
+        appendMessage("user", key.replace(/_/g, " "));
+        appendMessage("bot", faq[lang][key] || faq[lang].default);
+      }
+
+      function showDiseaseAdvice(d) {
+        askFAQ(d.trim().toLowerCase().replace(/\s+/g, "_"));
+      }
+
+      // Voice Input
+      let recognition;
+      if (window.SpeechRecognition || window.webkitSpeechRecognition) {
+        recognition = new (window.SpeechRecognition ||
+          window.webkitSpeechRecognition)();
+        recognition.continuous = false;
+        recognition.interimResults = false;
+        recognition.maxAlternatives = 1;
+        recognition.onresult = (e) => {
+          const txt = e.results[0][0].transcript;
+          document.getElementById("userInput").value = txt;
+          sendMessage();
+        };
+        recognition.onerror = (e) => console.error("SpeechRec error", e);
+      }
+
+      function startListening() {
+        const lang = document.getElementById("langSelect").value;
+        recognition.lang =
+          lang === "hi"
+            ? "hi-IN"
+            : lang === "kn"
+            ? "kn-IN"
+            : lang === "bn"
+            ? "bn-IN"
+            : "en-IN";
+        recognition.start();
+      }
+
+      // Text-to-Speech
+      function speakText(text) {
+        const lang = document.getElementById("langSelect").value;
+        const u = new SpeechSynthesisUtterance(text);
+        u.lang =
+          lang === "hi"
+            ? "hi-IN"
+            : lang === "kn"
+            ? "kn-IN"
+            : lang === "bn"
+            ? "bn-IN"
+            : "en-US";
+        const voices = window.speechSynthesis.getVoices();
+        let v =
+          voices.find((x) => x.lang === u.lang) ||
+          voices.find((x) => x.lang.startsWith(u.lang.split("-")[0]));
+        if (v) u.voice = v;
+        window.speechSynthesis.speak(u);
+      }
+
+      window.speechSynthesis.onvoiceschanged = () =>
+        window.speechSynthesis.getVoices();
+      // Voice Input (continued)
+      recognition.onresult = (e) => {
+        const txt = e.results[0][0].transcript;
+        document.getElementById("userInput").value = txt;
+        sendMessage();
+      };
+      recognition.onerror = (e) => {
+        console.error("Voice recognition error:", e.error);
+      };
+
+      function startListening() {
+        if (recognition) recognition.start();
+      }
+
+      // Voice Output (speech synthesis)
+      function speakText(text) {
+        if ("speechSynthesis" in window) {
+          const utter = new SpeechSynthesisUtterance(text);
+          utter.lang =
+            document.getElementById("langSelect").value === "hi"
+              ? "hi-IN"
+              : document.getElementById("langSelect").value === "kn"
+              ? "kn-IN"
+              : document.getElementById("langSelect").value === "bn"
+              ? "bn-IN"
+              : "en-US";
+          speechSynthesis.speak(utter);
+        }
+      }
+      function speakText(text) {
+        const lang = document.getElementById("langSelect").value;
+        const utterance = new SpeechSynthesisUtterance(text);
+
+        // Language-specific voices
+        const langMap = {
+          en: "en-IN",
+          hi: "hi-IN",
+          kn: "kn-IN",
+          bn: "bn-IN",
+        };
+        utterance.lang = langMap[lang] || "en-IN";
+
+        // Try to use a matching voice
+        const voices = window.speechSynthesis.getVoices();
+        const matchedVoice = voices.find((v) => v.lang === utterance.lang);
+        if (matchedVoice) utterance.voice = matchedVoice;
+
+        speechSynthesis.speak(utterance);
+      }
+    </script>
+  </body>
+</html>
